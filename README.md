@@ -18,7 +18,7 @@ Please follow the steps below to set up your local development environment. We a
 
 #### 1. Clone the Repository
 ```bash
-git clone [https://github.com/AnniecTW/info490-moveon.git](https://github.com/AnniecTW/info490-moveon.git)
+git clone https://github.com/AnniecTW/info490-moveon.git
 cd info490-moveon
 ```
 
