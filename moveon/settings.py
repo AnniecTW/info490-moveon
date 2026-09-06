@@ -37,7 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'marketplace',
+    'bundles',
+    'messaging',
 ]
+
+AUTH_USER_MODEL = 'marketplace.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
