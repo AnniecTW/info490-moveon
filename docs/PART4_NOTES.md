@@ -76,11 +76,23 @@ Realistic demo data is created via `python manage.py seed_demo_data` (a Django m
 - 4 item categories and 10 item types.
 - 8 listings spread across the 4 users.
 - 2 price recommendations (one pending, one modified/applied).
-- 1 Living Room bundle with 3 requested categories (Sofa/Rug/Lamp) and 3 matching bundle items.
+- 1 Living Room bundle (buyer: Sam) with 3 requested categories (Sofa/Rug/Lamp) and 3 matching bundle items sourced from Alex, Maya, and Jamie's listings — deliberately cross-seller, since Sam owns none of the three, avoiding a buyer "purchasing" their own listing.
 - 1 conversation with 3 messages.
 - 1 completed transaction (Desk Chair, Maya → Alex, $18 agreed vs. $24 benchmark — demonstrates the buyer-savings calculation the Profile dashboard will later derive: `24 - 18 = 6`).
 
 The command uses `get_or_create` throughout, so re-running it is safe and won't collide with the manually-created test data used for the validation demonstrations above.
+
+## Known Deviations From the Design Doc (Reviewed, Not Oversights)
+
+A teammate audit flagged a few differences between this implementation and the team's original wireframes/ERD doc. Each was a deliberate call made in `MoveOn_Claude_Code_Django_Context.md` (the implementation spec this project was built from), which explicitly superseded the earlier design doc on these points:
+
+- **`Bundle.selected_tier`, not `source_tier`** — the design doc used `source_tier` in places, but the implementation spec explicitly says: "For Part 4, stay aligned with the current ER and use `selected_tier`."
+- **`BundleCategory.item_type -> ItemType`, not `-> ItemCategory`** — the design doc's relationship summary describes a broad-category link, but the implementation spec explicitly clarifies: "The ER concept `BundleCategory` refers to a bundle's selected *specific item types* (Sofa, Rug, Lamp, Television) ... Do not link BundleCategory to the broad ItemCategory model." Examples throughout are specific item types, not broad categories.
+- **`Transaction` has no uniqueness constraint against `Listing`** (i.e. a listing can have more than one `Transaction` row) — the spec's own relationship summary states "Listing 1 -> zero/many transaction records depending [on] implementation/history," leaving this intentionally unconstrained rather than limited to one completed sale per listing.
+- **Login uses `username`, not `email`** — the spec explicitly allows this: "it is acceptable for `username` to remain Django's standard login/admin identifier while `email` is unique and represents the university email."
+- **`image_url` / `meetup_location` use `blank=True` (empty string) rather than `null=True`** — standard Django convention for optional text fields (avoids two different "no value" states, `NULL` vs. `''`, for the same field); not a data-loss or validation gap.
+
+If the team's canonical ERD doc is later revised to remove these allowances, these five points are exactly what would need to change in `marketplace/models.py` / `bundles/models.py`.
 
 ## Reproducing This Setup From Scratch
 

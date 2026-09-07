@@ -126,8 +126,11 @@ class Command(BaseCommand):
         )
 
     def _seed_bundle(self, users, item_types, listings):
+        # Sam is deliberately the buyer here (not Alex, who owns the Sofa listing)
+        # so the bundle demonstrates a realistic cross-seller purchase rather than
+        # a buyer "buying" their own listing.
         bundle, _ = Bundle.objects.get_or_create(
-            buyer=users["Alex"],
+            buyer=users["Sam"],
             space=Bundle.Space.LIVING_ROOM,
             defaults={"selected_tier": Bundle.Tier.BEST_VALUE, "status": Bundle.Status.DRAFT},
         )
