@@ -55,11 +55,11 @@ Considered putting `User` in a dedicated `accounts` app (a common Django convent
 - `BundleItem`: `UNIQUE(bundle, listing)` — the same listing can't be attached to a bundle twice.
 - `Conversation`: `UNIQUE(buyer, seller, listing)` — prevents duplicate threads for the same buyer/seller/listing combination (only meaningfully applies to normal-listing conversations, since `listing` is nullable for bundle-item conversations — an accepted quirk from the source design, not a bug).
 
-## Superuser
+## Superuser~~~~
 
 Username `admin`, password `uiuc12345` (course-mandated password). The original assignment text gave two conflicting usernames in different sections (`mohitg2` and `tester`); `admin` was chosen instead to resolve the ambiguity cleanly rather than guessing which was authoritative.
 
-## Validation Demonstrations (manually verified in Django Admin)
+## Validation Demonstrations (*Refer to "Constraint Validation Evidence.md")
 
 1. **Single-field uniqueness** — `ItemCategory.category_name`: attempted to create a second `Furniture` category; Django Admin rejected the save with a "already exists" validation error before it reached the database.
 2. **Multi-field uniqueness** — `ItemType (category, item_type_name)`: created `Sofa` under `Furniture` twice; second attempt was rejected. Creating `Sofa` under a *different* category (`Electronics`) succeeded, confirming the constraint is scoped to the pair, not the name alone.
