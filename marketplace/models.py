@@ -32,6 +32,11 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ["display_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email', 'username'], name='unique_email_username'
+            )
+        ]
 
     def __str__(self):
         return self.display_name or self.username
@@ -48,6 +53,11 @@ class ItemCategory(models.Model):
 
     class Meta:
         ordering = ["category_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['category_name'], name='unique_category_name'
+            )
+        ]
 
     def __str__(self):
         return self.category_name
@@ -129,6 +139,11 @@ class Listing(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['seller', 'title', 'created_at'], name='unique_seller_listing_timestamp'
+            )
+        ]
 
     def __str__(self):
         return self.title
@@ -161,6 +176,11 @@ class PriceRecommendation(models.Model):
 
     class Meta:
         ordering = ["-generated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['listing', 'generated_at'], name='unique_recommendation_per_timestamp'
+            )
+        ]
 
     def __str__(self):
         return f"{self.listing.title}: {self.previous_price} -> {self.recommended_price}"
@@ -204,6 +224,11 @@ class Transaction(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['listing', 'buyer'], name='unique_transaction_per_buyer_listing'
+            )
+        ]
 
     def __str__(self):
         return f"Transaction #{self.pk}: {self.listing.title}"

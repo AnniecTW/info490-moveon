@@ -43,6 +43,11 @@ class Bundle(models.Model):
 
     class Meta:
         ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['buyer', 'created_at'], name='unique_bundle_per_buyer_timestamp'
+            )
+        ]
 
     def __str__(self):
         return f"{self.buyer}: {self.get_space_display()} bundle"

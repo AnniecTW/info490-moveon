@@ -50,10 +50,17 @@ Considered putting `User` in a dedicated `accounts` app (a common Django convent
 
 ## Multi-Field Uniqueness Constraints
 
+- `ItemCategory`: `UNIQUE(category_name)` — ensures top-level category taxonomies remain distinct and prevents duplicate category buckets across the marketplace.
 - `ItemType`: `UNIQUE(category, item_type_name)` — the same item type name can exist under different categories, but not twice under the same one.
+- `Listing`: `UNIQUE(seller, title, created_at)` — acts as an idempotency safeguard preventing accidental duplicate post submissions caused by double-clicking or network retries by the same seller.
+- `PriceRecommendation`: `UNIQUE(listing, generated_at)` — guarantees that a listing receives at most one system price recommendation at any given timestamp.
+- `Transaction`: `UNIQUE(listing, buyer)` — restricts completed marketplace transactions so that a buyer cannot record multiple separate purchases for the exact same physical listing.
+- `Bundle`: `UNIQUE(buyer, created_at)` — enforces bundle generation rate-limiting and prevents accidental identical bundle requests from the same buyer within the same creation timestamp.
 - `BundleCategory`: `UNIQUE(bundle, item_type)` — a buyer can't request the same item type twice in one bundle.
 - `BundleItem`: `UNIQUE(bundle, listing)` — the same listing can't be attached to a bundle twice.
 - `Conversation`: `UNIQUE(buyer, seller, listing)` — prevents duplicate threads for the same buyer/seller/listing combination (only meaningfully applies to normal-listing conversations, since `listing` is nullable for bundle-item conversations — an accepted quirk from the source design, not a bug).
+- `Message`: `UNIQUE(conversation, sender, sent_at)` — debounces incoming chat payloads so a user cannot dispatch identical message events within the same millisecond timestamp.
+- `User`: `UNIQUE(email, username)` — enforces a strict one-to-one mapping across primary authentication identifiers, ensuring institutional NetID credentials remain uniquely coupled to a single user identity.
 
 ## Superuser
 

@@ -56,6 +56,11 @@ class Message(models.Model):
 
     class Meta:
         ordering = ["sent_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['conversation', 'sender', 'sent_at'], name='unique_message_debounce'
+            )
+        ]
 
     def __str__(self):
         return f"{self.sender}: {self.body_text[:30]}"
