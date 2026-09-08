@@ -1,14 +1,18 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from bundles.models import BundleItem
 from marketplace.models import Listing
+from marketplace.validation import ValidatedSaveModel, database_for, participant_errors
 
 
-class Conversation(models.Model):
+class Conversation(ValidatedSaveModel):
     """
     Represents one buyer/seller message thread, contextualized by
-    either a normal Listing or a BundleItem. MoveOn has a single
+    a Listing at creation, optionally with a matching BundleItem.
+    Deleted listings leave their existing conversation history intact.
+    MoveOn has a single
     unified inbox; buying/selling are filters over Conversation, not
     separate participant roles.
     """
@@ -32,15 +36,46 @@ class Conversation(models.Model):
         ordering = ["-last_message_at", "-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["buyer", "seller", "listing"], name="unique_conversation_per_listing"
+                fields=["buyer", "seller", "listing"],name="unique_conversation_per_listing"
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(buyer=models.F("seller")),
+                name="conversation_distinct_participants",
             )
         ]
+    def clean(self):
+        super().clean()
+        database = database_for(self)
+        owner_id = Listing.objects.using(database).filter(
+            pk=self.listing_id
+        ).values_list("seller_id", flat=True).first() if self.listing_id else None
+        errors = participant_errors(self.buyer_id, self.seller_id, owner_id)
+        if self.listing_id is None:
+            previous = None if self._state.adding else type(self).objects.using(database).filter(
+                pk=self.pk
+            ).values("listing_id", "bundle_item_id").first()
+            if (previous is None or previous["listing_id"] is not None
+                    or previous["bundle_item_id"] != self.bundle_item_id):
+                errors["listing"] = "Select a listing to start a conversation. Existing listings cannot be cleared manually."
+        if self.bundle_item_id:
+            item = BundleItem.objects.using(database).filter(pk=self.bundle_item_id).values(
+                "listing_id", "listing__seller_id"
+            ).first()
+            if item:
+                errors.update(participant_errors(self.buyer_id, self.seller_id, item["listing__seller_id"]))
+                if self.listing_id is not None and item["listing_id"] != self.listing_id:
+                    errors["bundle_item"] = "The bundle item must refer to the selected listing."
+        if not self._state.adding and self.pk and self.buyer_id and self.seller_id:
+            if self.messages.using(database).exclude(sender_id__in=[self.buyer_id, self.seller_id]).exists():
+                errors["buyer"] = "Participants cannot be changed while existing messages belong to another sender."
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return f"{self.buyer} <-> {self.seller}"
 
 
-class Message(models.Model):
+class Message(ValidatedSaveModel):
     """
     Represents one chat message within a Conversation. Has no meaning
     outside its conversation, so it's deleted along with it.
@@ -56,6 +91,15 @@ class Message(models.Model):
 
     class Meta:
         ordering = ["sent_at"]
+
+    def clean(self):
+        super().clean()
+        if self.conversation_id and self.sender_id:
+            participants = Conversation.objects.using(database_for(self)).filter(
+                pk=self.conversation_id
+            ).values("buyer_id", "seller_id").first()
+            if participants and self.sender_id not in (participants["buyer_id"], participants["seller_id"]):
+                raise ValidationError({"sender": "The sender must be a buyer or seller in this conversation."})
 
     def __str__(self):
         return f"{self.sender}: {self.body_text[:30]}"

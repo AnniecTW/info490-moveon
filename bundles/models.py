@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from marketplace.models import ItemType, Listing
+from marketplace.validation import ValidatedSaveModel, database_for
 
 
 class Bundle(models.Model):
@@ -71,7 +73,7 @@ class BundleCategory(models.Model):
         return f"{self.bundle}: wants {self.item_type.item_type_name}"
 
 
-class BundleItem(models.Model):
+class BundleItem(ValidatedSaveModel):
     """
     Represents one actual Listing selected into a bundle, fulfilling
     one of its requested BundleCategory item types. This is the
@@ -98,6 +100,14 @@ class BundleItem(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["bundle", "listing"], name="unique_listing_per_bundle")
         ]
+
+    def clean(self):
+        super().clean()
+        if not self._state.adding and self.pk:
+            database = database_for(self)
+            previous_listing = type(self).objects.using(database).filter(pk=self.pk).values_list("listing_id", flat=True).first()
+            if previous_listing != self.listing_id and self.conversations.using(database).exists():
+                raise ValidationError({"listing": "The listing cannot change while this bundle item is referenced by a conversation."})
 
     def __str__(self):
         return f"{self.bundle}: {self.listing.title}"

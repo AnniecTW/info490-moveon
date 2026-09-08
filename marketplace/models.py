@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ValidationError
 
+from .validation import ValidatedSaveModel, database_for, participant_errors
 
 class User(AbstractUser):
     """
@@ -77,7 +79,7 @@ class ItemType(models.Model):
         return f"{self.category.category_name} / {self.item_type_name}"
 
 
-class Listing(models.Model):
+class Listing(ValidatedSaveModel):
     """
     Represents one item a student has posted for sale. Central object
     of the marketplace: sellers create these, buyers browse/purchase
@@ -130,6 +132,18 @@ class Listing(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
+    def clean(self):
+        super().clean()
+        if not self._state.adding and self.pk:
+            database = database_for(self)
+            previous_owner = type(self).objects.using(database).filter(pk=self.pk).values_list("seller_id", flat=True).first()
+            if previous_owner != self.seller_id and (
+                self.transactions.using(database).exists()
+                or self.conversations.using(database).exists()
+                or self.bundle_items.using(database).filter(conversations__isnull=False).exists()
+            ):
+                raise ValidationError({"seller": "The owner cannot change after a transaction or conversation references this listing."})
+
     def __str__(self):
         return self.title
 
@@ -166,7 +180,7 @@ class PriceRecommendation(models.Model):
         return f"{self.listing.title}: {self.previous_price} -> {self.recommended_price}"
 
 
-class Transaction(models.Model):
+class Transaction(ValidatedSaveModel):
     """
     Records one purchase/reservation lifecycle for a listing: who
     bought it, from whom, at what price, and its pickup/completion
@@ -204,6 +218,21 @@ class Transaction(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(buyer=models.F("seller")),
+                name="transaction_distinct_participants",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        owner_id = Listing.objects.using(database_for(self)).filter(
+            pk=self.listing_id
+        ).values_list("seller_id", flat=True).first() if self.listing_id else None
+        errors = participant_errors(self.buyer_id, self.seller_id, owner_id)
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return f"Transaction #{self.pk}: {self.listing.title}"
