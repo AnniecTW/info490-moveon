@@ -94,6 +94,39 @@ A teammate audit flagged a few differences between this implementation and the t
 
 If the team's canonical ERD doc is later revised to remove these allowances, these five points are exactly what would need to change in `marketplace/models.py` / `bundles/models.py`.
 
+## Participant Integrity Follow-Up
+
+A later review identified several participant-integrity gaps in the original Part 4 model implementation. These issues were addressed in the separate `PARTICIPANT_INTEGRITY` follow-up. If the team submits or preserves the original code without merging that follow-up, the points below should remain documented as known issues rather than being treated as already enforced by the base model.
+
+### Key Issues Identified and Fixed in the Follow-Up
+
+1. **Buyer and seller could be the same user**
+   - The original models did not prevent a `Transaction` or `Conversation` from using the same `User` as both buyer and seller.
+   - The follow-up adds validation and database `CheckConstraint`s requiring buyer and seller to be different users.
+
+2. **Transaction / conversation seller could disagree with the Listing owner**
+   - The original models allowed a record such as a `Transaction` whose `seller` was not the actual `Listing.seller`.
+   - The follow-up requires the seller to own the referenced `Listing`, and the Listing owner cannot simultaneously be the buyer.
+
+3. **Conversation context could be incomplete or inconsistent**
+   - The original model allowed a new `Conversation` with no selected `Listing`, and a supplied `BundleItem` could theoretically point to a different Listing from `Conversation.listing`.
+   - The follow-up requires new conversations to have an explicitly selected `Listing`. If a `BundleItem` is supplied, it must reference that same Listing.
+   - Existing historical conversations whose Listing later becomes `NULL` through `SET_NULL` remain valid so message history can be preserved.
+
+4. **A nonparticipant could be recorded as the sender of a Message**
+   - The original `Message.sender` was only a foreign key to `User`; it did not ensure that the sender was either the conversation buyer or seller.
+   - The follow-up restricts `Message.sender` to the two participants in the referenced `Conversation`.
+
+5. **Later edits could silently invalidate existing participant relationships**
+   - In the original model, changing `Listing.seller`, changing `BundleItem.listing`, or changing conversation participants could make already-existing transactions, conversations, or messages inconsistent.
+   - The follow-up blocks these edits when dependent participant records already exist, including participant changes that would leave old messages attributed to a nonparticipant.
+
+### Enforcement Notes
+
+The follow-up uses model validation for the cross-table relationship rules and database `CheckConstraint`s for the direct buyer/seller inequality rules. Operations that bypass normal model validation—such as `QuerySet.update()`, bulk operations, raw SQL, or certain concurrent writes—do not receive all of the same cross-table guarantees.
+
+The follow-up does **not** change transaction lifecycle/uniqueness policy, account deletion policy, or timestamp-based message uniqueness rules. Those remain separate design decisions.
+
 ## Reproducing This Setup From Scratch
 
 ```bash
