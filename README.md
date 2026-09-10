@@ -56,6 +56,8 @@ python manage.py runserver
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser. If you see the Django rocket launch page, your setup is complete!
 
+The `db.sqlite3` in this repo already comes seeded with demo data (users, listings, a bundle, a conversation, a transaction). Log into the admin site at [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/) with username `admin`, password `uiuc12345` to browse it. See `docs/Data Modeling and Design Notes.md` for the full data model write-up.
+
 ---
 
 ### 📌 Development Notes
