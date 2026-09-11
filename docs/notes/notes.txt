@@ -1,0 +1,8 @@
+Weekly progress notes
+
+Week 1:
+- Implemented the initial Django data model, migrations, Admin setup, and demo seed data.
+- Integrity follow-up: Added participant validation, database constraints, integrity tests, and documentation.
+
+Week 2:
+-
