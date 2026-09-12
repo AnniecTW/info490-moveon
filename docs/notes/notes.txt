@@ -5,4 +5,7 @@ Week 1:
 - Integrity follow-up: Added participant validation, database constraints, integrity tests, and documentation.
 
 Week 2:
--
+- Added split development and production settings with environment-based secret management.
+- Added reusable marketplace templates, Tailwind frontend assets, and an empty listing state.
+- Added named listing routes and implemented four Listing views: manual HttpResponse, render FBV, base CBV, and generic ListView.
+- Updated the README and branching strategy documentation with setup and workflow instructions.
