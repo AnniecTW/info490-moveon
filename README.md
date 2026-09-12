@@ -11,6 +11,7 @@ Please follow the steps below to set up your local development environment. We a
 ### Prerequisites
 * Git installed and configured
 * Python 3.12 (via Conda or native Python)
+* Node.js and npm
 
 ---
 
@@ -48,7 +49,21 @@ pip install -r requirements.txt
 
 Copy `.env.example` to `.env` and set a local `SECRET_KEY`. Do not commit `.env`.
 
-#### 4. Run Migrations, Seed Demo Data, & Start Dev Server
+#### 4. Install and Build Frontend Assets
+The Django templates use Tailwind CSS for styling. Install the frontend dependencies and build the stylesheet:
+
+```bash
+npm install
+npm run build
+```
+
+During frontend development, use the watch mode in a separate terminal:
+
+```bash
+npm run dev
+```
+
+#### 5. Run Migrations, Seed Demo Data, & Start Dev Server
 Create the local database, populate it with demo data, and start the server:
 
 ```bash
