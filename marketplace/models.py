@@ -114,6 +114,11 @@ class Listing(ValidatedSaveModel):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     image_url = models.URLField(blank=True)
+    image = models.ImageField(
+        upload_to="listings/",
+        blank=True,
+        null=True,
+    )
     condition = models.CharField(max_length=20, choices=Condition.choices)
     listing_price = models.DecimalField(max_digits=8, decimal_places=2)
     retail_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)

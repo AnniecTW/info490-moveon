@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Base CBV Listings</title>
+</head>
+<body>
+    <h1>Base CBV Summary</h1>
+    <ul>
+        {% for listing in listings %}
+            <li>{{ listing.title }} - ${{ listing.listing_price }}</li>
+        {% empty %}
+            <li>No listings available.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

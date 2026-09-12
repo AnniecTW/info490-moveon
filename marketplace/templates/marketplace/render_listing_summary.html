@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Render FBV Listings</title>
+</head>
+<body>
+    <h1>Render FBV Summary</h1>
+    <ul>
+        {% for listing in listings %}
+            <li>{{ listing.title }} - ${{ listing.listing_price }}</li>
+        {% empty %}
+            <li>No listings available.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
