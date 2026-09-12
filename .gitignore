@@ -220,3 +220,5 @@ __marimo__/
 
 
 .idea/
+# Node / frontend build
+node_modules/
